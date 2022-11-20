@@ -85,10 +85,14 @@ void A2DPSink::bt_i2s_task_handler(void *arg)
         data = (uint8_t *)xRingbufferReceive(s_ringbuf_i2s, &item_size, (portTickType)portMAX_DELAY);
 
         if (item_size != 0){
+            
+            //This is equivalent to (volume/127)^2 * 100
+            //This allows us to scale exponentially by multiplying the sample by this value and then dividing by 100
+            uint16_t expVolume = ((volume * volume) * 100) / (127 * 127);
             for(int i = 0; i < item_size - 1; i+=2){
                 bytesToint16.bytes[0] = data[i];
                 bytesToint16.bytes[1] = data[i + 1];
-                bytesToint16.int16 = int16_t(int32_t(bytesToint16.int16 * volume)/127);
+                bytesToint16.int16 = int16_t(int32_t(bytesToint16.int16 * expVolume)/100);
                 data[i] = bytesToint16.bytes[0];
                 data[i + 1] = bytesToint16.bytes[1];
             }
@@ -154,8 +158,7 @@ void A2DPSink::bt_i2s_task_start_up(void)
     if ((s_ringbuf_i2s = xRingbufferCreate(8 * 1024, RINGBUF_TYPE_BYTEBUF)) == NULL) {
         return;
     }
-    // xTaskCreatePinnedToCore(bt_i2s_task_handler, "BtI2STask", 1024, NULL, configMAX_PRIORITIES - 3, &s_bt_i2s_task_handle, taskCore);
-    xTaskCreatePinnedToCore(bt_i2s_task_handler, "BtI2STask", 8000, NULL, configMAX_PRIORITIES - 3, &s_bt_i2s_task_handle, taskCore);
+    xTaskCreatePinnedToCore(bt_i2s_task_handler, "BtI2STask", 1024, NULL, configMAX_PRIORITIES - 3, &s_bt_i2s_task_handle, taskCore);
 }
 
 void A2DPSink::bt_i2s_task_shut_down(void)
