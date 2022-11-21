@@ -138,7 +138,7 @@ bool A2DPSink::bt_app_work_dispatch(bt_app_cb_t p_cback, uint16_t event, void *p
 void A2DPSink::bt_app_task_start_up(void)
 {
     s_bt_app_task_queue = xQueueCreate(10, sizeof(bt_app_msg_t));
-    xTaskCreatePinnedToCore(bt_app_task_handler, "BtAppTask", 3072, NULL, 10, &s_bt_app_task_handle, taskCore);
+    xTaskCreatePinnedToCore(bt_app_task_handler, "BtAppTask", 3072, NULL, 3, &s_bt_app_task_handle, taskCore);
 }
 
 void A2DPSink::bt_app_task_shut_down(void)
