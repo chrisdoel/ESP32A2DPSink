@@ -16,6 +16,8 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/stream_buffer.h"
+
 #include "driver/i2s.h"
 
 #include "sys/lock.h"
@@ -30,6 +32,8 @@
 _lock_t A2DPSink::volume_lock;
 esp_avrc_rn_evt_cap_mask_t A2DPSink::s_avrc_peer_rn_cap;
 bool A2DPSink::connected;
+StreamBufferHandle_t A2DPSink::i2sStreamBuffer;
+
 
 void A2DPSink::bt_app_alloc_meta_buffer(esp_avrc_ct_cb_param_t *param)
 {
@@ -187,23 +191,23 @@ void A2DPSink::bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         ESP_LOGI(BT_AV_TAG, "A2DP audio stream configuration, codec type: %d", a2d->audio_cfg.mcc.type);
         /* for now only SBC stream is supported */
         if (a2d->audio_cfg.mcc.type == ESP_A2D_MCT_SBC) {
-            int sample_rate = 16000;
+            sampleRate = 16000;
             char oct0 = a2d->audio_cfg.mcc.cie.sbc[0];
             if (oct0 & (0x01 << 6)) {
-                sample_rate = 32000;
+                sampleRate = 32000;
             } else if (oct0 & (0x01 << 5)) {
-                sample_rate = 44100;
+                sampleRate = 44100;
             } else if (oct0 & (0x01 << 4)) {
-                sample_rate = 48000;
+                sampleRate = 48000;
             }
-            i2s_set_clk(i2sPort, sample_rate, 16, (i2s_channel_t) 2);
+            i2s_set_clk(i2sPort, sampleRate, 16, (i2s_channel_t) 2);
 
             ESP_LOGI(BT_AV_TAG, "Configure audio player: %x-%x-%x-%x",
                      a2d->audio_cfg.mcc.cie.sbc[0],
                      a2d->audio_cfg.mcc.cie.sbc[1],
                      a2d->audio_cfg.mcc.cie.sbc[2],
                      a2d->audio_cfg.mcc.cie.sbc[3]);
-            ESP_LOGI(BT_AV_TAG, "Audio player configured, sample rate: %d", sample_rate);
+            ESP_LOGI(BT_AV_TAG, "Audio player configured, sample rate: %d", sampleRate);
         }
         break;
     }
@@ -353,11 +357,11 @@ void A2DPSink::bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param
 
 void A2DPSink::bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 {
-    write_ringbuf(data, len);
-    
-    if(dataCallback != nullptr){
-        (*dataCallback)(data, len);
-    }
+    xStreamBufferSend(i2sStreamBuffer, data, len, (TickType_t) portMAX_DELAY);
+    // i2sQueue.pushFrontChunk(data, len);
+
+    // write_ringbuf(data, len);
+    // ESP_LOGI("cb", "%lu %i\n", (unsigned long)esp_timer_get_time()/1000, len/4);
 }
 
 void A2DPSink::bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param)

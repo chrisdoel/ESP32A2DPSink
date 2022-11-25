@@ -11,6 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "freertos/stream_buffer.h"
 #include "esp_log.h"
 // #include "bt_app_core.h"
 #include "driver/i2s.h"
@@ -63,8 +64,6 @@ typedef struct {
  */
 typedef void (* bt_app_copy_cb_t) (void *p_dest, void *p_src, int len);
 
-
-
 class A2DPSink{
     public:
         /*Main functions*/
@@ -78,8 +77,10 @@ class A2DPSink{
         void setBTName(char *name);
         static bool getDeviceConnected();
         uint8_t getVolume();
+        static uint16_t getSampleRate();
 
     private:
+
         static bool connected;
         static void (*dataCallback)(const uint8_t*, uint32_t);
         static void (*connectedCallback)();
@@ -129,6 +130,8 @@ class A2DPSink{
 
         static void bt_app_rc_tg_cb(esp_avrc_tg_cb_event_t event, esp_avrc_tg_cb_param_t *param);
 
+        static uint16_t sampleRate;
+
         /* audio stream datapath state */
         esp_a2d_audio_state_t s_audio_state = ESP_A2D_AUDIO_STATE_STOPPED;
         // /* connection state in string */
@@ -170,7 +173,8 @@ class A2DPSink{
         static xQueueHandle s_bt_app_task_queue;  /* handle of work queue */
         static xTaskHandle s_bt_app_task_handle;  /* handle of application task  */
         static xTaskHandle s_bt_i2s_task_handle;  /* handle of I2S task */
-        static RingbufHandle_t s_ringbuf_i2s;     /* handle of ringbuffer for I2S */
+        static StreamBufferHandle_t i2sStreamBuffer;
+        // static RingbufHandle_t s_ringbuf_i2s;     /* handle of ringbuffer for I2S */
 
         static bool taskCore;
 };

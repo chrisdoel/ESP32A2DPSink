@@ -5,6 +5,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/stream_buffer.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "esp_system.h"
@@ -29,12 +30,12 @@ char *A2DPSink::btName;
 xQueueHandle A2DPSink::s_bt_app_task_queue;
 xTaskHandle A2DPSink::s_bt_app_task_handle;
 xTaskHandle A2DPSink::s_bt_i2s_task_handle;
-RingbufHandle_t A2DPSink::s_ringbuf_i2s;
+// RingbufHandle_t A2DPSink::s_ringbuf_i2s;
 bool A2DPSink::taskCore;
 
 uint8_t A2DPSink::volume;
 bool A2DPSink::volume_notify;
-
+uint16_t A2DPSink::sampleRate;
 
 void (*A2DPSink::dataCallback)(const uint8_t*, uint32_t);
 void (*A2DPSink::connectedCallback)();
@@ -45,7 +46,7 @@ A2DPSink::A2DPSink(){
     s_bt_app_task_queue = NULL;
     s_bt_app_task_handle = NULL;
     s_bt_i2s_task_handle = NULL;
-    s_ringbuf_i2s = NULL;
+    // s_ringbuf_i2s = NULL;
 
     //Initialise default i2s configuration
     i2sConfig = { //Setup i2s peripheral 1 to send bt audio packets to dac
@@ -55,7 +56,7 @@ A2DPSink::A2DPSink(){
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
         .communication_format = I2S_COMM_FORMAT_STAND_MSB,//I2S_COMM_FORMAT_I2S_MSB,
         .intr_alloc_flags = 0, // default interrupt priority
-        .dma_buf_count = 3,
+        .dma_buf_count = 4,
         .dma_buf_len = 256,
         .use_apll = false,
         .tx_desc_auto_clear = true
@@ -172,6 +173,10 @@ bool A2DPSink::getDeviceConnected(){
 
 uint8_t A2DPSink::getVolume(){
     return volume;
+}
+
+uint16_t A2DPSink::getSampleRate(){
+    return sampleRate;
 }
 
 
