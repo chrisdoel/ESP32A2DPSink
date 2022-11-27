@@ -13,7 +13,6 @@
 #include "freertos/task.h"
 #include "freertos/stream_buffer.h"
 #include "esp_log.h"
-// #include "bt_app_core.h"
 #include "driver/i2s.h"
 #include "freertos/ringbuf.h"
 

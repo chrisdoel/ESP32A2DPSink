@@ -183,12 +183,7 @@ void A2DPSink::bt_i2s_task_start_up(void)
 {
     i2sStreamBuffer = xStreamBufferCreate(8000, 1);
 
-    // if ((s_ringbuf_i2s = xRingbufferCreate(8 * 1024, RINGBUF_TYPE_BYTEBUF)) == NULL) {
-    //     return;
-    // }
     xTaskCreatePinnedToCore(bt_i2s_task_handler, "BtI2STask", 3072, NULL, configMAX_PRIORITIES - 3, &s_bt_i2s_task_handle, taskCore);
-    // xTaskCreatePinnedToCore(bt_i2s_task_handler, "BtI2STask", 8000, NULL, configMAX_PRIORITIES - 3, &s_bt_i2s_task_handle, taskCore);
-
 }
 
 void A2DPSink::bt_i2s_task_shut_down(void)
@@ -197,16 +192,8 @@ void A2DPSink::bt_i2s_task_shut_down(void)
         vTaskDelete(s_bt_i2s_task_handle);
         s_bt_i2s_task_handle = NULL;
     }
-    // if (s_ringbuf_i2s) {
-    //     vRingbufferDelete(s_ringbuf_i2s);
-    //     s_ringbuf_i2s = NULL;
-    // }
-}
-
-size_t A2DPSink::write_ringbuf(const uint8_t *data, size_t size)
-{
-    // BaseType_t done = xRingbufferSend(s_ringbuf_i2s, (void *)data, size, (portTickType)portMAX_DELAY);
-
-    // return done ? size : 0;
-    return (size_t) 0;
+    if(i2sStreamBuffer){
+        vStreamBufferDelete(i2sStreamBuffer);
+        i2sStreamBuffer = NULL;
+    }
 }
